@@ -190,14 +190,18 @@
                 </button>
               </div>
 
-              <textarea id="answerInput" class="field w-full p-4 text-base resize-none" rows="3" placeholder="Digite sua resposta aqui..."></textarea>
+              <div id="textAnswerBlock">
+                <textarea id="answerInput" class="field w-full p-4 text-base resize-none" rows="3" placeholder="Digite sua resposta aqui..."></textarea>
 
-              <div class="flex items-center justify-between mt-4">
-                <span id="charHint" class="text-xs text-gray-400"></span>
-                <button id="btnNext" type="button" class="btn-neon px-6 py-3 text-sm" disabled>
-                  Próxima <span aria-hidden="true">→</span>
-                </button>
+                <div class="flex items-center justify-between mt-4">
+                  <span id="charHint" class="text-xs text-gray-400"></span>
+                  <button id="btnNext" type="button" class="btn-neon px-6 py-3 text-sm" disabled>
+                    Próxima <span aria-hidden="true">→</span>
+                  </button>
+                </div>
               </div>
+
+              <div id="choiceOptions" class="hidden space-y-3"></div>
             </div>
           </div>
         </section>

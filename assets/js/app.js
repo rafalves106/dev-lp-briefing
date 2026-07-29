@@ -4,22 +4,44 @@ document.addEventListener("DOMContentLoaded", () => {
   // ────────────────────────────────────────────────────────────
   const QUESTIONS = [
     {
-      key: "nome_clinica_medico",
-      text: "Qual o nome da clínica e do médico ou profissional responsável (com CRM)?",
-      type: "short",
-      minLength: 3,
+      key: "segmento",
+      text: "Qual o foco principal da página?",
+      type: "choice",
+      options: [
+        { value: "clinica", label: "Clínica" },
+        { value: "profissional", label: "Profissional" },
+        { value: "produto", label: "Produto/procedimento específico" },
+      ],
     },
     {
-      key: "procedimentos",
-      text: "Quais procedimentos ou especialidades você quer destacar na página?",
+      key: "identificacao",
+      type: "short",
+      minLength: 3,
+      textBySegment: {
+        clinica: "Qual o nome da clínica e do profissional responsável (com CRM)?",
+        profissional: "Qual o nome do profissional, especialidade e CRM?",
+        produto: "Qual o nome do procedimento/produto, e qual profissional ou clínica está por trás dele (nome + CRM)?",
+      },
+    },
+    {
+      key: "o_que_sera_vendido",
       type: "long",
       minLength: 10,
+      textBySegment: {
+        clinica: "Quais procedimentos ou especialidades a clínica quer destacar?",
+        profissional: "Quais procedimentos esse profissional realiza e quer destacar?",
+        produto: "Descreva o procedimento/produto: como funciona, pra quem é indicado, principais benefícios.",
+      },
     },
     {
       key: "diferenciais",
-      text: "O que diferencia sua clínica dos concorrentes?",
       type: "long",
       minLength: 10,
+      textBySegment: {
+        clinica: "O que diferencia a clínica dos concorrentes?",
+        profissional: "O que diferencia o profissional dos concorrentes?",
+        produto: "O que diferencia o produto dos concorrentes?",
+      },
     },
     {
       key: "tom_voz",
@@ -34,10 +56,16 @@ document.addEventListener("DOMContentLoaded", () => {
       minLength: 10,
     },
     {
-      key: "contato_valores_cta",
-      text: "Qual o número de WhatsApp, o endereço completo da clínica, a faixa de valores dos procedimentos e para onde os botões da página devem levar: direto pro WhatsApp, para um sistema de agendamento online (Doctoralia, iClinic, etc.) ou outro fluxo?",
+      key: "contato_valores",
+      text: "Qual o número de WhatsApp, o endereço completo e a faixa de valores dos procedimentos?",
       type: "long",
       minLength: 15,
+    },
+    {
+      key: "destino_ctas",
+      text: "Para onde os botões da página devem levar: direto pro WhatsApp, para um sistema de agendamento online (Doctoralia, iClinic, etc.), ou outro fluxo?",
+      type: "short",
+      minLength: 5,
     },
   ];
 
@@ -84,9 +112,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const progressBar = document.getElementById("progressBar");
   const chatLog = document.getElementById("chatLog");
   const questionText = document.getElementById("questionText");
+  const textAnswerBlock = document.getElementById("textAnswerBlock");
   const answerInput = document.getElementById("answerInput");
   const charHint = document.getElementById("charHint");
   const btnNext = document.getElementById("btnNext");
+  const choiceOptions = document.getElementById("choiceOptions");
   const btnStart = document.getElementById("btnStart");
   const btnMute = document.getElementById("btnMute");
   const iconSound = document.getElementById("iconSound");
@@ -167,7 +197,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ────────────────────────────────────────────────────────────
-  // ÁUDIO (Piper TTS pré-gerado em ./assets/audio/pergunta-N.ogg)
+  // ÁUDIO (Piper TTS pré-gerado em ./assets/audio/pergunta-N[-segmento].ogg)
   // ────────────────────────────────────────────────────────────
   function playQuestionAudio(index) {
     if (state.currentAudio) {
@@ -176,7 +206,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (state.muted) return;
 
-    const audio = new Audio(`/assets/audio/pergunta-${index + 1}.ogg`);
+    const q = QUESTIONS[index];
+    const suffix = q.textBySegment ? `-${state.segmento}` : "";
+    const audio = new Audio(`/assets/audio/pergunta-${index + 1}${suffix}.ogg`);
     state.currentAudio = audio;
     audio.play().catch(() => {
       // autoplay bloqueado ou arquivo ainda não gerado — segue sem áudio
@@ -302,36 +334,14 @@ document.addEventListener("DOMContentLoaded", () => {
   // ────────────────────────────────────────────────────────────
   // FLUXO DE PERGUNTAS
   // ────────────────────────────────────────────────────────────
-  function renderQuestion(index) {
-    const q = QUESTIONS[index];
-    questionText.textContent = q.text;
-    answerInput.value = state.answers[q.key] || "";
-    answerInput.placeholder = q.type === "long"
-      ? "Fique à vontade para escrever com detalhes..."
-      : "Digite sua resposta aqui...";
-    charHint.textContent = q.type === "long" ? "Pode escrever bastante, sem pressa." : "Resposta curta e direta já ajuda.";
-    btnNext.textContent = index === QUESTIONS.length - 1 ? "Revisar tudo →" : "Próxima →";
-    btnNext.disabled = answerInput.value.trim().length < q.minLength;
-
-    updateProgressBar();
-    playQuestionAudio(index);
-    answerInput.focus();
+  function resolveQuestionText(q) {
+    return q.textBySegment ? q.textBySegment[state.segmento] : q.text;
   }
 
-  btnStart.addEventListener("click", () => {
-    buildProgressBar();
-    showScreen("questions");
-    renderQuestion(state.currentIndex);
-  });
-
-  btnNext.addEventListener("click", () => {
-    const q = QUESTIONS[state.currentIndex];
-    const answer = answerInput.value.trim();
-    if (answer.length < q.minLength) return;
-
-    state.answers[q.key] = answer;
-    appendToChatLog(q.text, answer);
-    saveAnswerProgressively(q.key, answer);
+  function commitAnswer(key, answerText, questionTextResolved) {
+    state.answers[key] = answerText;
+    appendToChatLog(questionTextResolved, answerText);
+    saveAnswerProgressively(key, answerText);
 
     if (state.editingFromReview) {
       state.editingFromReview = false;
@@ -345,6 +355,60 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       goToReview();
     }
+  }
+
+  function renderChoiceOptions(q, questionTextResolved) {
+    choiceOptions.innerHTML = "";
+    q.options.forEach((opt) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "btn-ghost w-full p-4 text-base text-left";
+      btn.textContent = opt.label;
+      btn.addEventListener("click", () => {
+        state.segmento = opt.value;
+        commitAnswer(q.key, opt.label, questionTextResolved);
+      });
+      choiceOptions.appendChild(btn);
+    });
+  }
+
+  function renderQuestion(index) {
+    const q = QUESTIONS[index];
+    const text = resolveQuestionText(q);
+    questionText.textContent = text;
+
+    if (q.type === "choice") {
+      textAnswerBlock.classList.add("hidden");
+      choiceOptions.classList.remove("hidden");
+      renderChoiceOptions(q, text);
+    } else {
+      choiceOptions.classList.add("hidden");
+      textAnswerBlock.classList.remove("hidden");
+      answerInput.value = state.answers[q.key] || "";
+      answerInput.placeholder = q.type === "long"
+        ? "Fique à vontade para escrever com detalhes..."
+        : "Digite sua resposta aqui...";
+      charHint.textContent = q.type === "long" ? "Pode escrever bastante, sem pressa." : "Resposta curta e direta já ajuda.";
+      btnNext.textContent = index === QUESTIONS.length - 1 ? "Revisar tudo →" : "Próxima →";
+      btnNext.disabled = answerInput.value.trim().length < q.minLength;
+      answerInput.focus();
+    }
+
+    updateProgressBar();
+    playQuestionAudio(index);
+  }
+
+  btnStart.addEventListener("click", () => {
+    buildProgressBar();
+    showScreen("questions");
+    renderQuestion(state.currentIndex);
+  });
+
+  btnNext.addEventListener("click", () => {
+    const q = QUESTIONS[state.currentIndex];
+    const answer = answerInput.value.trim();
+    if (answer.length < q.minLength) return;
+    commitAnswer(q.key, answer, resolveQuestionText(q));
   });
 
   // ────────────────────────────────────────────────────────────
@@ -363,7 +427,7 @@ document.addEventListener("DOMContentLoaded", () => {
       item.className = "glass rounded-xl p-4 flex items-start justify-between gap-4";
       item.innerHTML = `
         <div>
-          <p class="text-xs text-gray-400 mb-1">${escapeHtml(q.text)}</p>
+          <p class="text-xs text-gray-400 mb-1">${escapeHtml(resolveQuestionText(q))}</p>
           <p class="text-sm font-bold">${escapeHtml(state.answers[q.key] || "—")}</p>
         </div>
         <button type="button" data-edit-index="${i}" class="btn-ghost px-3 py-1.5 text-xs shrink-0">Editar</button>
