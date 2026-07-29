@@ -1,4 +1,5 @@
 const path = require("path");
+const crypto = require("crypto");
 const Database = require("better-sqlite3");
 
 const db = new Database(path.join(__dirname, "data", "briefing.db"));
@@ -31,4 +32,12 @@ db.exec(`
   );
 `);
 
-module.exports = db;
+function createProject(clientName, projectName) {
+  const token = crypto.randomBytes(12).toString("hex");
+  const info = db
+    .prepare("INSERT INTO projects (token, client_name, project_name) VALUES (?, ?, ?)")
+    .run(token, clientName, projectName);
+  return db.prepare("SELECT * FROM projects WHERE id = ?").get(info.lastInsertRowid);
+}
+
+module.exports = { db, createProject };

@@ -53,6 +53,23 @@
       }
       .btn-ghost:hover { border-color: rgba(0,255,136,0.4); color: #00ff88; }
 
+      .btn-neon {
+        background: #00ff88; color: #0a0a0a; font-weight: 700; border-radius: 12px;
+        transition: all 0.3s ease;
+      }
+      .btn-neon:hover:not(:disabled) { background: #00cc6a; box-shadow: 0 0 20px rgba(0,255,136,0.4); }
+      .btn-neon:disabled { opacity: 0.35; cursor: not-allowed; }
+
+      .field {
+        background: rgba(255,255,255,0.02);
+        border: 1px solid rgba(255,255,255,0.1);
+        color: #f0f0f0;
+        border-radius: 12px;
+        transition: border-color 0.2s ease;
+      }
+      .field:focus { outline: none; border-color: #00ff88; box-shadow: 0 0 0 3px rgba(0,255,136,0.15); }
+      .field::placeholder { color: rgba(240,240,240,0.35); }
+
       .badge { border-radius: 999px; font-weight: 700; }
       .badge-pending { background: rgba(255,255,255,0.08); color: rgba(240,240,240,0.6); }
       .badge-in_progress { background: rgba(255,193,7,0.12); color: #ffc107; }
@@ -68,6 +85,13 @@
           <h1 class="text-2xl sm:text-3xl font-black">Painel de <span class="neon-text">briefings</span></h1>
           <a href="/admin" class="btn-ghost px-4 py-2 text-sm" id="backToList">← Todos os briefings</a>
         </header>
+
+        <form id="newProjectForm" class="glass rounded-xl p-4 flex flex-col sm:flex-row gap-3">
+          <input id="newClientName" type="text" placeholder="Nome do cliente" class="field flex-1 px-4 py-2 text-sm" required />
+          <input id="newProjectName" type="text" placeholder="Nome do projeto" class="field flex-1 px-4 py-2 text-sm" required />
+          <button type="submit" class="btn-neon px-5 py-2 text-sm shrink-0">+ Novo briefing</button>
+        </form>
+        <p id="newProjectResult" class="hidden glass-neon rounded-xl p-4 text-sm"></p>
 
         <section id="listView" class="space-y-3"></section>
         <section id="detailView" class="space-y-6 hidden"></section>

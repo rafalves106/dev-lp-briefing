@@ -2,6 +2,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const listView = document.getElementById("listView");
   const detailView = document.getElementById("detailView");
   const backToList = document.getElementById("backToList");
+  const newProjectForm = document.getElementById("newProjectForm");
+  const newClientName = document.getElementById("newClientName");
+  const newProjectName = document.getElementById("newProjectName");
+  const newProjectResult = document.getElementById("newProjectResult");
 
   const STATUS_LABEL = { pending: "Pendente", in_progress: "Em andamento", completed: "Concluído" };
 
@@ -19,9 +23,14 @@ document.addEventListener("DOMContentLoaded", () => {
     return `<span class="badge badge-${status} px-3 py-1 text-xs">${STATUS_LABEL[status] || status}</span>`;
   }
 
+  function briefingLink(token) {
+    return `${window.location.origin}/briefing/${token}`;
+  }
+
   async function renderList() {
     backToList.classList.add("hidden");
     detailView.classList.add("hidden");
+    newProjectForm.classList.remove("hidden");
     listView.classList.remove("hidden");
     listView.innerHTML = `<p class="text-sm text-gray-400">Carregando...</p>`;
 
@@ -36,20 +45,75 @@ document.addEventListener("DOMContentLoaded", () => {
     listView.innerHTML = projects
       .map(
         (p) => `
-        <a href="/admin/briefing/${p.id}" class="glass rounded-xl p-4 flex items-center justify-between gap-4 hover:border-[rgba(0,255,136,0.4)] transition-colors" style="display:flex">
-          <div>
+        <div class="glass rounded-xl p-4 flex items-center justify-between gap-4">
+          <a href="/admin/briefing/${p.id}" class="flex-1 hover:opacity-80 transition-opacity">
             <p class="font-bold">${escapeHtml(p.project_name)}</p>
             <p class="text-sm text-gray-400">${escapeHtml(p.client_name)} · ${new Date(p.created_at).toLocaleDateString("pt-BR")}</p>
+          </a>
+          <div class="flex items-center gap-3 shrink-0">
+            <button type="button" data-copy-token="${p.token}" class="btn-ghost px-3 py-1.5 text-xs">Copiar link</button>
+            ${statusBadge(p.status)}
           </div>
-          ${statusBadge(p.status)}
-        </a>`
+        </div>`
       )
       .join("");
   }
 
+  listView.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-copy-token]");
+    if (!btn) return;
+    navigator.clipboard.writeText(briefingLink(btn.dataset.copyToken));
+    const original = btn.textContent;
+    btn.textContent = "Copiado!";
+    setTimeout(() => (btn.textContent = original), 1500);
+  });
+
+  newProjectForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const submitBtn = newProjectForm.querySelector("button[type=submit]");
+    submitBtn.disabled = true;
+    newProjectResult.classList.add("hidden");
+
+    try {
+      const res = await fetch("/admin/api/briefings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          client_name: newClientName.value.trim(),
+          project_name: newProjectName.value.trim(),
+        }),
+      });
+      if (!res.ok) throw new Error("falha ao criar projeto");
+      const project = await res.json();
+      const link = briefingLink(project.token);
+
+      newProjectResult.innerHTML = `
+        Link do briefing: <a href="${link}" target="_blank" rel="noopener" class="neon-text underline">${link}</a>
+        <button type="button" data-copy-token="${project.token}" class="btn-ghost px-2 py-1 text-xs ml-2">Copiar</button>
+      `;
+      newProjectResult.classList.remove("hidden");
+      newProjectForm.reset();
+      renderList();
+    } catch {
+      newProjectResult.textContent = "Não foi possível criar o projeto agora. Tente de novo.";
+      newProjectResult.classList.remove("hidden");
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+
+  newProjectResult.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-copy-token]");
+    if (!btn) return;
+    navigator.clipboard.writeText(briefingLink(btn.dataset.copyToken));
+    btn.textContent = "Copiado!";
+  });
+
   async function renderDetail(id) {
     backToList.classList.remove("hidden");
     listView.classList.add("hidden");
+    newProjectForm.classList.add("hidden");
+    newProjectResult.classList.add("hidden");
     detailView.classList.remove("hidden");
     detailView.innerHTML = `<p class="text-sm text-gray-400">Carregando...</p>`;
 

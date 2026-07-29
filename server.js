@@ -1,7 +1,7 @@
 require("dotenv").config();
 const path = require("path");
 const express = require("express");
-const db = require("./server/db");
+const { db, createProject } = require("./server/db");
 const { upload, UPLOADS_ROOT } = require("./server/upload");
 const { sendBriefingEmail } = require("./server/mailer");
 
@@ -97,6 +97,15 @@ app.post("/briefing/:token/submit", loadProject, upload.array("identidade_visual
 app.get("/admin/api/briefings", (req, res) => {
   const projects = db.prepare("SELECT * FROM projects ORDER BY created_at DESC").all();
   res.json(projects);
+});
+
+app.post("/admin/api/briefings", (req, res) => {
+  const clientName = (req.body.client_name || "").trim();
+  const projectName = (req.body.project_name || "").trim();
+  if (!clientName || !projectName) {
+    return res.status(400).json({ error: "client_name e project_name são obrigatórios." });
+  }
+  res.status(201).json(createProject(clientName, projectName));
 });
 
 app.get("/admin/api/briefings/:id", (req, res) => {
