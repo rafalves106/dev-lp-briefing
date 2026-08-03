@@ -27,6 +27,52 @@ document.addEventListener("DOMContentLoaded", () => {
     return `${window.location.origin}/briefing/${token}`;
   }
 
+  function slugify(str) {
+    return str
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
+  }
+
+  function buildMarkdown(project, answers, attachments) {
+    const lines = [
+      `# ${project.project_name}`,
+      "",
+      `- **Cliente:** ${project.client_name}`,
+      `- **Status:** ${STATUS_LABEL[project.status] || project.status}`,
+      `- **Criado em:** ${new Date(project.created_at).toLocaleDateString("pt-BR")}`,
+      "",
+      "## Respostas",
+      "",
+    ];
+    answers.forEach((a) => {
+      lines.push(`### ${formatLabel(a.question_key)}`, "", a.answer_text || "—", "");
+    });
+    lines.push("## Identidade visual anexada", "");
+    if (attachments.length) {
+      attachments.forEach((f) => {
+        const name = f.file_path.split("/").pop();
+        lines.push(`- [${name}](${window.location.origin}/admin/briefing/${project.id}/download/${f.id})`);
+      });
+    } else {
+      lines.push("Nenhum arquivo enviado.");
+    }
+    return lines.join("\n");
+  }
+
+  function downloadTextFile(filename, content) {
+    const blob = new Blob([content], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
   async function renderList() {
     backToList.classList.add("hidden");
     detailView.classList.add("hidden");
@@ -151,7 +197,10 @@ document.addEventListener("DOMContentLoaded", () => {
           <h2 class="text-xl font-black">${escapeHtml(project.project_name)}</h2>
           <p class="text-sm text-gray-400">${escapeHtml(project.client_name)} · ${new Date(project.created_at).toLocaleDateString("pt-BR")}</p>
         </div>
-        ${statusBadge(project.status)}
+        <div class="flex items-center gap-3 shrink-0">
+          <button type="button" id="btnExportMd" class="btn-ghost px-3 py-1.5 text-xs">Exportar .md</button>
+          ${statusBadge(project.status)}
+        </div>
       </header>
 
       <div class="space-y-3">${answersHtml}</div>
@@ -161,6 +210,11 @@ document.addEventListener("DOMContentLoaded", () => {
         ${attachmentsHtml}
       </div>
     `;
+
+    document.getElementById("btnExportMd").addEventListener("click", () => {
+      const md = buildMarkdown(project, answers, attachments);
+      downloadTextFile(`briefing-${slugify(project.project_name)}.md`, md);
+    });
   }
 
   function route() {
