@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Landing pages de alta conversão | Rafael Alves</title>
+    <meta name="robots" content="noindex, nofollow" />
+
+    <link rel="preload" href="/assets/fonts/inter-v20-latin-900.woff2" as="font" type="font/woff2" crossorigin="" />
+    <link rel="preload" href="/assets/fonts/inter-v20-latin-700.woff2" as="font" type="font/woff2" crossorigin="" />
+
+    <link rel="stylesheet" href="/assets/style.min.css" />
+
+    <meta name="description" content="Landing pages de alta conversão para clínicas e profissionais de saúde." />
+
+    <style>
+      @font-face {
+        font-display: swap;
+        font-family: "Inter";
+        font-style: normal;
+        font-weight: 400;
+        src: url("/assets/fonts/inter-v20-latin-regular.woff2") format("woff2");
+      }
+      @font-face {
+        font-display: swap;
+        font-family: "Inter";
+        font-style: normal;
+        font-weight: 700;
+        src: url("/assets/fonts/inter-v20-latin-700.woff2") format("woff2");
+      }
+      @font-face {
+        font-display: swap;
+        font-family: "Inter";
+        font-style: normal;
+        font-weight: 900;
+        src: url("/assets/fonts/inter-v20-latin-900.woff2") format("woff2");
+      }
+
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body {
+        background-color: #0a0a0a;
+        color: #f0f0f0;
+        font-family: "Inter", sans-serif;
+        min-height: 100vh;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        opacity: 0.03;
+        pointer-events: none;
+        z-index: 0;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      }
+      main { position: relative; z-index: 1; }
+
+      .glass {
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.07);
+      }
+      .glass-neon {
+        background: rgba(0, 255, 136, 0.05);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(0, 255, 136, 0.2);
+      }
+      .neon-text { color: #00ff88; text-shadow: 0 0 20px rgba(0, 255, 136, 0.5); }
+
+      .btn-neon {
+        background: #00ff88; color: #0a0a0a; font-weight: 700; border-radius: 12px;
+        transition: all 0.3s ease; position: relative; overflow: hidden;
+      }
+      .btn-neon::before {
+        content: ""; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+        transition: left 0.5s ease;
+      }
+      .btn-neon:hover::before { left: 100%; }
+      .btn-neon:hover { background: #00cc6a; box-shadow: 0 0 30px rgba(0,255,136,0.5); transform: translateY(-2px); }
+
+      .gradient-border { position: relative; }
+      .gradient-border::before {
+        content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px;
+        background: linear-gradient(135deg, rgba(0,255,136,0.4), transparent, rgba(0,255,136,0.1));
+        -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor; mask-composite: exclude;
+        pointer-events: none;
+      }
+
+      :focus-visible { outline: 2px solid #00ff88; outline-offset: 2px; }
+    </style>
+  </head>
+  <body>
+    <main class="min-h-screen flex items-center justify-center px-4 py-10 sm:py-16">
+      <div class="w-full max-w-xl text-center">
+        <span class="inline-block px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider glass-neon neon-text mb-6">
+          Landing pages de alta conversão
+        </span>
+
+        <h1 class="text-3xl sm:text-4xl font-black leading-tight mb-4">
+          Esse link é de uso <span class="neon-text">exclusivo</span> pra clientes em processo de criação de página
+        </h1>
+
+        <p class="text-gray-400 text-base sm:text-lg mb-10 max-w-lg mx-auto">
+          Sua clínica também merece uma landing page de alta conversão. Fala comigo no WhatsApp e vamos criar a sua.
+        </p>
+
+        <a
+          href="https://wa.me/5531983207258?text=Ol%C3%A1%2C%20vi%20a%20p%C3%A1gina%20de%20briefing%20e%20quero%20saber%20mais%20sobre%20landing%20pages%20para%20minha%20cl%C3%ADnica."
+          target="_blank"
+          rel="noopener"
+          class="btn-neon inline-block px-8 py-4 text-base gradient-border"
+        >
+          Falar no WhatsApp
+        </a>
+      </div>
+    </main>
+  </body>
+</html>

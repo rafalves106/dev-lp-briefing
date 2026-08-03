@@ -41,9 +41,13 @@ app.get("/", (req, res) => res.sendFile(path.join(__dirname, "index.html")));
 app.get("/admin", (req, res) => res.sendFile(path.join(__dirname, "admin.html")));
 app.get("/admin/briefing/:id", (req, res) => res.sendFile(path.join(__dirname, "admin.html")));
 
-app.get("/briefing/:token", loadProject, (req, res) => {
-  if (req.project.status === "pending") {
-    db.prepare("UPDATE projects SET status = 'in_progress' WHERE id = ?").run(req.project.id);
+app.get(["/briefing", "/briefing/"], (req, res) => res.sendFile(path.join(__dirname, "briefing-cta.html")));
+
+app.get("/briefing/:token", (req, res) => {
+  const project = db.prepare("SELECT * FROM projects WHERE token = ?").get(req.params.token);
+  if (!project) return res.sendFile(path.join(__dirname, "briefing-cta.html"));
+  if (project.status === "pending") {
+    db.prepare("UPDATE projects SET status = 'in_progress' WHERE id = ?").run(project.id);
   }
   res.sendFile(path.join(__dirname, "index.html"));
 });
