@@ -76,6 +76,7 @@ app.post("/briefing/:token/submit", loadProject, upload.array("identidade_visual
   upsertAnswer(project.id, "informacoes_adicionais", req.body.additional_info || "");
   upsertAnswer(project.id, "links_inspiracao", req.body.inspiration_links || "");
   upsertAnswer(project.id, "concorrentes", req.body.competitors || "");
+  upsertAnswer(project.id, "budget_range", req.body.budget_range || "");
 
   const insertAttachment = db.prepare(
     "INSERT INTO attachments (project_id, question_key, file_path) VALUES (?, 'identidade_visual', ?)"

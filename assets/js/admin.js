@@ -36,6 +36,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function buildMarkdown(project, answers, attachments) {
+    const budgetAnswer = answers.find((a) => a.question_key === "budget_range");
+    const mainAnswers = answers.filter((a) => a.question_key !== "budget_range");
+
     const lines = [
       `# ${project.project_name}`,
       "",
@@ -46,9 +49,15 @@ document.addEventListener("DOMContentLoaded", () => {
       "## Respostas",
       "",
     ];
-    answers.forEach((a) => {
+    mainAnswers.forEach((a) => {
       lines.push(`### ${formatLabel(a.question_key)}`, "", a.answer_text || "—", "");
     });
+
+    if (budgetAnswer && budgetAnswer.answer_text) {
+      lines.push("## Uso interno — não publicar", "");
+      lines.push(`**Orçamento comercial:** ${budgetAnswer.answer_text}`, "");
+    }
+
     lines.push("## Identidade visual anexada", "");
     if (attachments.length) {
       attachments.forEach((f) => {
@@ -170,15 +179,28 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     const { project, answers, attachments } = await res.json();
 
-    const answersHtml = answers
-      .map(
-        (a) => `
+    const budgetAnswer = answers.find((a) => a.question_key === "budget_range");
+    const mainAnswers = answers.filter((a) => a.question_key !== "budget_range");
+
+    const answersHtml = mainAnswers
+      .map((a) => {
+        const isPending = (a.answer_text || "").startsWith("⏳");
+        return `
         <div class="glass rounded-xl p-4">
           <p class="text-xs text-gray-400 mb-1">${escapeHtml(formatLabel(a.question_key))}</p>
-          <p class="text-sm font-bold whitespace-pre-wrap">${escapeHtml(a.answer_text) || "—"}</p>
-        </div>`
-      )
+          <p class="text-sm font-bold whitespace-pre-wrap ${isPending ? "text-amber-400" : ""}">${escapeHtml(a.answer_text) || "—"}</p>
+        </div>`;
+      })
       .join("");
+
+    const budgetHtml =
+      budgetAnswer && budgetAnswer.answer_text
+        ? `
+        <div class="glass rounded-xl p-4" style="border-color: rgba(255,193,7,0.3);">
+          <p class="text-xs font-bold mb-1" style="color: #ffc107;">Uso interno — orçamento comercial (nunca aparece na página)</p>
+          <p class="text-sm font-bold whitespace-pre-wrap">${escapeHtml(budgetAnswer.answer_text)}</p>
+        </div>`
+        : "";
 
     const attachmentsHtml = attachments.length
       ? attachments
@@ -204,6 +226,8 @@ document.addEventListener("DOMContentLoaded", () => {
       </header>
 
       <div class="space-y-3">${answersHtml}</div>
+
+      ${budgetHtml}
 
       <div>
         <h3 class="text-sm font-bold text-gray-400 mb-2">Identidade visual anexada</h3>

@@ -24,6 +24,22 @@ document.addEventListener("DOMContentLoaded", () => {
       },
     },
     {
+      key: "tipo_atendimento",
+      text: "O atendimento é presencial, por telemedicina, ou os dois?",
+      type: "choice",
+      options: [
+        { value: "presencial", label: "Presencial" },
+        { value: "telemedicina", label: "Telemedicina" },
+        { value: "ambos", label: "Ambos" },
+      ],
+    },
+    {
+      key: "cidade_regiao",
+      text: "Qual a cidade ou região de atendimento?",
+      type: "short",
+      minLength: 2,
+    },
+    {
       key: "o_que_sera_vendido",
       type: "long",
       minLength: 10,
@@ -56,16 +72,74 @@ document.addEventListener("DOMContentLoaded", () => {
       minLength: 10,
     },
     {
+      key: "aceita_convenio",
+      text: "Sua clínica aceita convênio?",
+      type: "choice",
+      options: [
+        { value: "nao", label: "Não" },
+        {
+          value: "sim",
+          label: "Sim",
+          followUp: {
+            type: "text",
+            text: "Quais convênios?",
+            placeholder: "Ex: Unimed, Bradesco Saúde, SulAmérica...",
+            minLength: 2,
+          },
+        },
+      ],
+    },
+    {
+      key: "telemedicina_100",
+      text: "O atendimento é 100% telemedicina, sem endereço físico?",
+      type: "choice",
+      options: [
+        { value: "sim", label: "Sim" },
+        { value: "nao", label: "Não" },
+      ],
+    },
+    {
+      key: "tem_video_institucional",
+      text: "Você já tem um vídeo institucional pronto pra usar na página?",
+      type: "choice",
+      options: [
+        { value: "sim", label: "Sim" },
+        { value: "nao", label: "Não" },
+      ],
+    },
+    {
       key: "contato_valores",
-      text: "Qual o número de WhatsApp, o endereço completo e a faixa de valores dos procedimentos?",
+      text: "Qual o número de WhatsApp e o endereço completo?",
       type: "long",
-      minLength: 15,
+      minLength: 10,
     },
     {
       key: "destino_ctas",
       text: "Para onde os botões da página devem levar: direto pro WhatsApp, para um sistema de agendamento online (Doctoralia, iClinic, etc.), ou outro fluxo?",
       type: "short",
       minLength: 5,
+    },
+    {
+      key: "hosting_type",
+      text: "Você já tem domínio e hospedagem próprios, ou prefere começar com um subdomínio gratuito nosso (ex: clinicax.falveshub.com)?",
+      type: "choice",
+      options: [
+        { value: "our_subdomain", label: "Subdomínio gratuito (falveshub.com)" },
+        {
+          value: "own_domain",
+          label: "Domínio próprio",
+          followUp: {
+            type: "choice",
+            text: "Sua hospedagem é (ou vai ser) VPS/Cloud com acesso root/SSH, ou hospedagem compartilhada (painel cPanel)?",
+            options: [
+              { value: "own_domain_root", label: "VPS/Cloud com acesso root/SSH" },
+              { value: "own_domain_shared", label: "Compartilhada (painel cPanel)" },
+              { value: "own_domain_unknown", label: "Não sei", pending: true },
+            ],
+          },
+        },
+        { value: "own_domain_unknown_help", label: "Preciso de ajuda pra decidir", pending: true },
+      ],
     },
   ];
 
@@ -127,6 +201,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const additionalInfo = document.getElementById("additionalInfo");
   const inspirationLinks = document.getElementById("inspirationLinks");
   const competitors = document.getElementById("competitors");
+  const budgetRange = document.getElementById("budgetRange");
   const dropZone = document.getElementById("dropZone");
   const fileInput = document.getElementById("fileInput");
   const btnBrowseFiles = document.getElementById("btnBrowseFiles");
@@ -357,6 +432,65 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // combina o(s) rótulo(s) escolhidos num texto só, marcando pendência quando aplicável
+  function combineAnswerParts(parts, pending) {
+    const text = parts.join(" — ");
+    return pending ? `⏳ Pendente — ${text}` : text;
+  }
+
+  // campo de texto solto (não usa o textAnswerBlock/btnNext principal, pra não colidir
+  // com o listener genérico de perguntas de texto)
+  function renderFollowUpText(followUp, onConfirm) {
+    choiceOptions.innerHTML = `
+      <textarea id="followUpInput" class="field w-full p-4 text-base resize-none" rows="2" placeholder="${escapeHtml(followUp.placeholder || "")}"></textarea>
+      <button type="button" id="followUpConfirm" class="btn-neon px-6 py-3 text-sm mt-3" disabled>Confirmar</button>
+    `;
+    const input = document.getElementById("followUpInput");
+    const confirmBtn = document.getElementById("followUpConfirm");
+    const minLength = followUp.minLength || 1;
+    input.addEventListener("input", () => {
+      confirmBtn.disabled = input.value.trim().length < minLength;
+    });
+    confirmBtn.addEventListener("click", () => {
+      if (input.value.trim().length < minLength) return;
+      onConfirm(input.value.trim());
+    });
+    input.focus();
+  }
+
+  function renderFollowUpChoice(followUp, onSelect) {
+    choiceOptions.innerHTML = "";
+    questionText.textContent = followUp.text;
+    followUp.options.forEach((subOpt) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "btn-ghost w-full p-4 text-base text-left";
+      btn.textContent = subOpt.label;
+      btn.addEventListener("click", () => onSelect(subOpt));
+      choiceOptions.appendChild(btn);
+    });
+  }
+
+  function handleChoiceSelect(q, opt, questionTextResolved) {
+    if (q.key === "segmento") state.segmento = opt.value;
+
+    if (!opt.followUp) {
+      commitAnswer(q.key, combineAnswerParts([opt.label], opt.pending), questionTextResolved);
+      return;
+    }
+
+    if (opt.followUp.type === "choice") {
+      renderFollowUpChoice(opt.followUp, (subOpt) => {
+        commitAnswer(q.key, combineAnswerParts([opt.label, subOpt.label], subOpt.pending), questionTextResolved);
+      });
+    } else if (opt.followUp.type === "text") {
+      questionText.textContent = opt.followUp.text;
+      renderFollowUpText(opt.followUp, (detail) => {
+        commitAnswer(q.key, combineAnswerParts([opt.label, detail], false), questionTextResolved);
+      });
+    }
+  }
+
   function renderChoiceOptions(q, questionTextResolved) {
     choiceOptions.innerHTML = "";
     q.options.forEach((opt) => {
@@ -364,10 +498,7 @@ document.addEventListener("DOMContentLoaded", () => {
       btn.type = "button";
       btn.className = "btn-ghost w-full p-4 text-base text-left";
       btn.textContent = opt.label;
-      btn.addEventListener("click", () => {
-        state.segmento = opt.value;
-        commitAnswer(q.key, opt.label, questionTextResolved);
-      });
+      btn.addEventListener("click", () => handleChoiceSelect(q, opt, questionTextResolved));
       choiceOptions.appendChild(btn);
     });
   }
@@ -423,12 +554,14 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderReviewSummary() {
     reviewSummary.innerHTML = "";
     QUESTIONS.forEach((q, i) => {
+      const answer = state.answers[q.key] || "—";
+      const isPending = answer.startsWith("⏳");
       const item = document.createElement("div");
       item.className = "glass rounded-xl p-4 flex items-start justify-between gap-4";
       item.innerHTML = `
         <div>
           <p class="text-xs text-gray-400 mb-1">${escapeHtml(resolveQuestionText(q))}</p>
-          <p class="text-sm font-bold">${escapeHtml(state.answers[q.key] || "—")}</p>
+          <p class="text-sm font-bold ${isPending ? "text-amber-400" : ""}">${escapeHtml(answer)}</p>
         </div>
         <button type="button" data-edit-index="${i}" class="btn-ghost px-3 py-1.5 text-xs shrink-0">Editar</button>
       `;
@@ -535,6 +668,7 @@ document.addEventListener("DOMContentLoaded", () => {
     formData.append("additional_info", additionalInfo.value.trim());
     formData.append("inspiration_links", inspirationLinks.value.trim());
     formData.append("competitors", competitors.value.trim());
+    formData.append("budget_range", budgetRange.value.trim());
     state.files.forEach((file) => formData.append("identidade_visual", file));
 
     try {
