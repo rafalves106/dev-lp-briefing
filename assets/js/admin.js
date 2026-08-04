@@ -35,20 +35,42 @@ document.addEventListener("DOMContentLoaded", () => {
       .replace(/(^-|-$)/g, "");
   }
 
+  // question_keys cuja resposta ficou marcada como pendência (prefixo ⏳, ver app.js)
+  function pendingKeys(answers) {
+    return answers.filter((a) => (a.answer_text || "").startsWith("⏳")).map((a) => a.question_key);
+  }
+
+  // Status do documento (convenção da GUIA_FLUXO_PROJETOS.md: Fase 2 só começa com COMPLETO).
+  // Só é COMPLETO se o cliente enviou o formulário E nenhuma resposta ficou pendente.
+  function docStatus(project, answers) {
+    return project.status === "completed" && pendingKeys(answers).length === 0 ? "COMPLETO" : "RASCUNHO";
+  }
+
   function buildMarkdown(project, answers, attachments) {
     const budgetAnswer = answers.find((a) => a.question_key === "budget_range");
     const mainAnswers = answers.filter((a) => a.question_key !== "budget_range");
+    const pending = pendingKeys(answers);
 
     const lines = [
       `# ${project.project_name}`,
       "",
+      `Status: ${docStatus(project, answers)}`,
+      "",
+    ];
+    if (pending.length) {
+      lines.push(
+        `> ⚠️ Pendências que impedem COMPLETO: ${pending.map(formatLabel).join(", ")}. Fase 2 não deve começar até isso ser resolvido.`,
+        ""
+      );
+    }
+    lines.push(
       `- **Cliente:** ${project.client_name}`,
-      `- **Status:** ${STATUS_LABEL[project.status] || project.status}`,
+      `- **Status do envio:** ${STATUS_LABEL[project.status] || project.status}`,
       `- **Criado em:** ${new Date(project.created_at).toLocaleDateString("pt-BR")}`,
       "",
       "## Respostas",
-      "",
-    ];
+      ""
+    );
     mainAnswers.forEach((a) => {
       lines.push(`### ${formatLabel(a.question_key)}`, "", a.answer_text || "—", "");
     });
@@ -213,16 +235,30 @@ document.addEventListener("DOMContentLoaded", () => {
           .join("")
       : `<p class="text-sm text-gray-400">Nenhum arquivo enviado.</p>`;
 
+    const docStatusValue = docStatus(project, answers);
+    const pending = pendingKeys(answers);
+    const docStatusBadge =
+      docStatusValue === "COMPLETO"
+        ? `<span class="badge px-3 py-1 text-xs" style="background: rgba(0,255,136,0.12); color: #00ff88;">COMPLETO</span>`
+        : `<span class="badge px-3 py-1 text-xs" style="background: rgba(255,193,7,0.12); color: #ffc107;">RASCUNHO</span>`;
+    const pendingWarningHtml = pending.length
+      ? `<p class="text-xs mt-3" style="color: #ffc107;">⚠️ Pendências que impedem COMPLETO: ${escapeHtml(pending.map(formatLabel).join(", "))}</p>`
+      : "";
+
     detailView.innerHTML = `
-      <header class="glass rounded-xl p-6 flex items-center justify-between gap-4">
-        <div>
-          <h2 class="text-xl font-black">${escapeHtml(project.project_name)}</h2>
-          <p class="text-sm text-gray-400">${escapeHtml(project.client_name)} · ${new Date(project.created_at).toLocaleDateString("pt-BR")}</p>
+      <header class="glass rounded-xl p-6">
+        <div class="flex items-center justify-between gap-4">
+          <div>
+            <h2 class="text-xl font-black">${escapeHtml(project.project_name)}</h2>
+            <p class="text-sm text-gray-400">${escapeHtml(project.client_name)} · ${new Date(project.created_at).toLocaleDateString("pt-BR")}</p>
+          </div>
+          <div class="flex items-center gap-3 shrink-0">
+            <button type="button" id="btnExportMd" class="btn-ghost px-3 py-1.5 text-xs">Exportar .md</button>
+            ${docStatusBadge}
+            ${statusBadge(project.status)}
+          </div>
         </div>
-        <div class="flex items-center gap-3 shrink-0">
-          <button type="button" id="btnExportMd" class="btn-ghost px-3 py-1.5 text-xs">Exportar .md</button>
-          ${statusBadge(project.status)}
-        </div>
+        ${pendingWarningHtml}
       </header>
 
       <div class="space-y-3">${answersHtml}</div>

@@ -85,6 +85,7 @@ document.addEventListener("DOMContentLoaded", () => {
             text: "Quais convênios?",
             placeholder: "Ex: Unimed, Bradesco Saúde, SulAmérica...",
             minLength: 2,
+            audio: "pergunta-9-followup.ogg",
           },
         },
       ],
@@ -108,7 +109,7 @@ document.addEventListener("DOMContentLoaded", () => {
       ],
     },
     {
-      key: "contato_valores",
+      key: "contato_endereco",
       text: "Qual o número de WhatsApp e o endereço completo?",
       type: "long",
       minLength: 10,
@@ -131,6 +132,7 @@ document.addEventListener("DOMContentLoaded", () => {
           followUp: {
             type: "choice",
             text: "Sua hospedagem é (ou vai ser) VPS/Cloud com acesso root/SSH, ou hospedagem compartilhada (painel cPanel)?",
+            audio: "pergunta-14-followup.ogg",
             options: [
               { value: "own_domain_root", label: "VPS/Cloud com acesso root/SSH" },
               { value: "own_domain_shared", label: "Compartilhada (painel cPanel)" },
@@ -274,20 +276,24 @@ document.addEventListener("DOMContentLoaded", () => {
   // ────────────────────────────────────────────────────────────
   // ÁUDIO (Piper TTS pré-gerado em ./assets/audio/pergunta-N[-segmento].ogg)
   // ────────────────────────────────────────────────────────────
-  function playQuestionAudio(index) {
+  function playAudioFile(filename) {
     if (state.currentAudio) {
       state.currentAudio.pause();
       state.currentAudio = null;
     }
     if (state.muted) return;
 
-    const q = QUESTIONS[index];
-    const suffix = q.textBySegment ? `-${state.segmento}` : "";
-    const audio = new Audio(`/assets/audio/pergunta-${index + 1}${suffix}.ogg`);
+    const audio = new Audio(`/assets/audio/${filename}`);
     state.currentAudio = audio;
     audio.play().catch(() => {
       // autoplay bloqueado ou arquivo ainda não gerado — segue sem áudio
     });
+  }
+
+  function playQuestionAudio(index) {
+    const q = QUESTIONS[index];
+    const suffix = q.textBySegment ? `-${state.segmento}` : "";
+    playAudioFile(`pergunta-${index + 1}${suffix}.ogg`);
   }
 
   btnMute.addEventListener("click", () => {
@@ -478,6 +484,8 @@ document.addEventListener("DOMContentLoaded", () => {
       commitAnswer(q.key, combineAnswerParts([opt.label], opt.pending), questionTextResolved);
       return;
     }
+
+    if (opt.followUp.audio) playAudioFile(opt.followUp.audio);
 
     if (opt.followUp.type === "choice") {
       renderFollowUpChoice(opt.followUp, (subOpt) => {
