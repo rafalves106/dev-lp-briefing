@@ -48,7 +48,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function buildMarkdown(project, answers, attachments) {
     const budgetAnswer = answers.find((a) => a.question_key === "budget_range");
-    const mainAnswers = answers.filter((a) => a.question_key !== "budget_range");
+    const designAnswer = answers.find((a) => a.question_key === "design_tokens");
+    const mainAnswers = answers.filter((a) => a.question_key !== "budget_range" && a.question_key !== "design_tokens");
     const pending = pendingKeys(answers);
 
     const lines = [
@@ -74,6 +75,28 @@ document.addEventListener("DOMContentLoaded", () => {
     mainAnswers.forEach((a) => {
       lines.push(`### ${formatLabel(a.question_key)}`, "", a.answer_text || "—", "");
     });
+
+    if (designAnswer && designAnswer.answer_text) {
+      const tokens = JSON.parse(designAnswer.answer_text);
+      lines.push(
+        "## Direção Visual (escolhida pelo cliente)",
+        "",
+        `- **Arquétipo:** ${tokens.arquetipo}`,
+        `- **Tipografia:** título ${tokens.tipografia.titulo} / corpo ${tokens.tipografia.corpo}`,
+        `- **Paleta:** primária ${tokens.paleta.primaria}, secundária ${tokens.paleta.secundaria}, neutros ${tokens.paleta.neutros}, texto ${tokens.paleta.texto}`,
+        `- **Estilos:** cantos ${tokens.estilos.cantos}, fundo ${tokens.estilos.fundo}, sombra ${tokens.estilos.sombra}`,
+        `- **Densidade:** ${tokens.densidade}`,
+        `- **Imagem:** moldura ${tokens.imagem.moldura}, tratamento ${tokens.imagem.tratamento}`,
+        `- **CTA:** estilo ${tokens.cta.estilo}, ícone ${tokens.cta.icone ? "sim" : "não"}`,
+        "",
+        "Objeto completo (design tokens):",
+        "",
+        "```json",
+        JSON.stringify(tokens, null, 2),
+        "```",
+        ""
+      );
+    }
 
     if (budgetAnswer && budgetAnswer.answer_text) {
       lines.push("## Uso interno — não publicar", "");
@@ -202,7 +225,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const { project, answers, attachments } = await res.json();
 
     const budgetAnswer = answers.find((a) => a.question_key === "budget_range");
-    const mainAnswers = answers.filter((a) => a.question_key !== "budget_range");
+    const designAnswer = answers.find((a) => a.question_key === "design_tokens");
+    const mainAnswers = answers.filter((a) => a.question_key !== "budget_range" && a.question_key !== "design_tokens");
 
     const answersHtml = mainAnswers
       .map((a) => {
@@ -222,6 +246,30 @@ document.addEventListener("DOMContentLoaded", () => {
           <p class="text-xs font-bold mb-1" style="color: #ffc107;">Uso interno — orçamento comercial (nunca aparece na página)</p>
           <p class="text-sm font-bold whitespace-pre-wrap">${escapeHtml(budgetAnswer.answer_text)}</p>
         </div>`
+        : "";
+
+    const designHtml =
+      designAnswer && designAnswer.answer_text
+        ? (() => {
+            const t = JSON.parse(designAnswer.answer_text);
+            const swatch = (hex) => `<span style="width:18px;height:18px;border-radius:50%;background:${hex};display:inline-block;border:1px solid rgba(255,255,255,0.2);"></span>`;
+            return `
+        <div class="glass rounded-xl p-4 space-y-3">
+          <p class="text-xs text-gray-400">Direção visual</p>
+          <p class="text-sm font-bold">${escapeHtml(t.arquetipo)}</p>
+          <div class="flex items-center gap-2">
+            ${swatch(t.paleta.primaria)}${swatch(t.paleta.secundaria)}${swatch(t.paleta.neutros)}${swatch(t.paleta.texto)}
+            <span class="text-xs text-gray-400">${escapeHtml(t.paleta.primaria)} / ${escapeHtml(t.paleta.secundaria)}</span>
+          </div>
+          <p class="text-xs text-gray-400">Tipografia: <span class="text-gray-200">${escapeHtml(t.tipografia.titulo)}</span> (título) + <span class="text-gray-200">${escapeHtml(t.tipografia.corpo)}</span> (corpo)</p>
+          <p class="text-xs text-gray-400">Estilos: cantos ${escapeHtml(t.estilos.cantos)} · fundo ${escapeHtml(t.estilos.fundo)} · sombra ${escapeHtml(t.estilos.sombra)} · densidade ${escapeHtml(t.densidade)}</p>
+          <p class="text-xs text-gray-400">Imagem: moldura ${escapeHtml(t.imagem.moldura)} · tratamento ${escapeHtml(t.imagem.tratamento)} — CTA: ${escapeHtml(t.cta.estilo)}${t.cta.icone ? " (com ícone)" : ""}</p>
+          <details>
+            <summary class="text-xs text-gray-400 cursor-pointer">Ver objeto completo (design tokens)</summary>
+            <pre class="text-xs overflow-x-auto whitespace-pre-wrap mt-2">${escapeHtml(JSON.stringify(t, null, 2))}</pre>
+          </details>
+        </div>`;
+          })()
         : "";
 
     const attachmentsHtml = attachments.length
@@ -262,6 +310,8 @@ document.addEventListener("DOMContentLoaded", () => {
       </header>
 
       <div class="space-y-3">${answersHtml}</div>
+
+      ${designHtml}
 
       ${budgetHtml}
 
