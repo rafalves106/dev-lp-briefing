@@ -143,22 +143,6 @@
       .drop-zone { border: 1px dashed rgba(255,255,255,0.2); border-radius: 12px; transition: border-color 0.2s ease, background 0.2s ease; }
       .drop-zone.is-dragover { border-color: #00ff88; background: rgba(0,255,136,0.05); }
 
-      .direction-swatch {
-        background: rgba(255,255,255,0.02);
-        border: 1px solid rgba(255,255,255,0.1);
-        color: #f0f0f0;
-        border-radius: 12px;
-        padding: 0.75rem 1rem;
-        text-align: left;
-        transition: border-color 0.2s ease, background 0.2s ease;
-      }
-      .direction-swatch:hover { border-color: rgba(0,255,136,0.4); }
-      .direction-swatch[data-active="true"] {
-        border-color: #00ff88;
-        background: rgba(0,255,136,0.08);
-        box-shadow: 0 0 0 1px rgba(0,255,136,0.3);
-      }
-
       :focus-visible { outline: 2px solid #00ff88; outline-offset: 2px; }
 
       @media (prefers-reduced-motion: reduce) {
@@ -219,74 +203,6 @@
 
               <div id="choiceOptions" class="hidden space-y-3"></div>
             </div>
-          </div>
-        </section>
-
-        <!-- TELA 2.5: Direção visual interativa (arquétipo + ajuste fino, com preview ao vivo) -->
-        <section id="screen-visual-direction" class="hidden">
-          <h2 class="text-2xl sm:text-3xl font-black mb-2">Direção <span class="neon-text">visual</span></h2>
-          <p class="text-gray-400 mb-6">Escolha um ponto de partida e ajuste o que quiser — a prévia abaixo atualiza ao vivo. Só o arquétipo é obrigatório, o resto é opcional.</p>
-
-          <div id="archetypeGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8"></div>
-
-          <div id="visualPreview" class="glass rounded-2xl p-5 sm:p-6 mb-8 space-y-4">
-            <div id="previewHero" class="text-center transition-all">
-              <h3 id="previewHeadline" class="text-2xl mb-2">Sua clínica, sua página</h3>
-              <p id="previewSubheadline" class="text-sm mb-4">Atendimento humanizado com resultados reais</p>
-              <button id="previewCta" type="button" class="inline-block px-6 py-3 font-bold" tabindex="-1">Agendar avaliação</button>
-            </div>
-            <div id="previewCard" class="transition-all">
-              <div id="previewImage" class="w-full h-20 mb-3 transition-all"></div>
-              <p class="font-bold mb-1">Harmonização Facial</p>
-              <p class="text-sm opacity-80">Procedimento minimamente invasivo para realçar sua beleza natural.</p>
-            </div>
-            <div id="previewTestimonial" class="transition-all">
-              <p class="text-sm italic mb-2">"Atendimento excelente, me senti muito bem cuidada do início ao fim."</p>
-              <p class="text-xs opacity-70">— Paciente satisfeita</p>
-            </div>
-          </div>
-
-          <div id="miniSections" class="space-y-6 hidden">
-            <div>
-              <span class="block font-bold mb-2">Tipografia</span>
-              <div id="fontOptions" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
-            </div>
-            <div>
-              <span class="block font-bold mb-2">Paleta de tons</span>
-              <div id="paletteOptions" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
-            </div>
-            <div>
-              <span class="block font-bold mb-2">Cantos</span>
-              <div id="cantoOptions" class="flex gap-2 flex-wrap"></div>
-            </div>
-            <div>
-              <span class="block font-bold mb-2">Fundo</span>
-              <div id="fundoOptions" class="flex gap-2 flex-wrap"></div>
-            </div>
-            <div>
-              <span class="block font-bold mb-2">Sombra</span>
-              <div id="sombraOptions" class="flex gap-2 flex-wrap"></div>
-            </div>
-            <div>
-              <span class="block font-bold mb-2">Densidade</span>
-              <div id="densidadeOptions" class="flex gap-2 flex-wrap"></div>
-            </div>
-            <div>
-              <span class="block font-bold mb-2">Estilo de imagem</span>
-              <div id="imagemMolduraOptions" class="flex gap-2 flex-wrap mb-2"></div>
-              <div id="imagemTratamentoOptions" class="flex gap-2 flex-wrap"></div>
-            </div>
-            <div>
-              <span class="block font-bold mb-2">Estilo de botão (CTA)</span>
-              <div id="ctaEstiloOptions" class="flex gap-2 flex-wrap mb-2"></div>
-              <div id="ctaIconeOptions" class="flex gap-2 flex-wrap"></div>
-            </div>
-          </div>
-
-          <div class="flex items-center justify-end mt-10">
-            <button id="btnVisualDirectionContinue" type="button" class="btn-neon px-8 py-4 text-base gradient-border" disabled>
-              Continuar <span aria-hidden="true">→</span>
-            </button>
           </div>
         </section>
 
